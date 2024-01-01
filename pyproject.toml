@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "colour-in-backend"
+version = "0.1.0"
+description = "colour-in-backend"
+authors = ["izzy456"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+numpy = "^1.26.2"
+opencv-python-headless = "^4.9.0.80"
+fastapi = "^0.108.0"
+uvicorn = {version = "^0.25.0", extras = ["standard"]}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
