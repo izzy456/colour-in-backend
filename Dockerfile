@@ -1,15 +1,20 @@
 FROM python:3.12-slim as build
 
-COPY pyproject.toml poetry.lock ./
+WORKDIR /app
 
-RUN pip install --no-cache-dir poetry==1.7 && poetry install --no-root --no-ansi --no-interaction --no-cache \
-&& poetry export -f requirements.txt -o requirements.txt
+COPY pyproject.toml poetry.lock app ./
+
+RUN pip install --no-cache-dir poetry==1.7 \
+&& poetry install --no-root --no-ansi --no-interaction --no-cache \
+&& poetry export -f requirements.txt -o requirements.txt --without=test
+
+RUN poetry run pytest
 
 FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY --from=build requirements.txt .
+COPY --from=build app/requirements.txt .
 
 RUN set -ex \
 && addgroup --system --gid 1001 appgroup \
@@ -21,7 +26,7 @@ RUN set -ex \
 && apt-get clean -y \
 && rm -rf /var/lib/apt/lists/*
 
-COPY src .
+COPY app/main.py app/schemas.py app/image_function.py ./
 
 EXPOSE 8080
 

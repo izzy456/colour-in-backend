@@ -15,13 +15,16 @@ app.add_middleware(
 @app.post("/get-colour-in", response_model=schemas.ColourInResponse)
 def get_colour_in(request: schemas.ColourInRequest):
     dataPrefix = request.image.split(",")[0]
-    colouring_page = create_colouring_page(
-        img_data=request.image.split(",")[1],
-        blur_val=request.blur_val,
-        light_val=request.light_val,
-        dark_val=request.dark_val,
-        sharpen=request.sharpen
-        )
+    try:
+        colouring_page = create_colouring_page(
+            img_data=request.image.split(",")[1],
+            blur_val=request.blur_val,
+            light_val=request.light_val,
+            dark_val=request.dark_val,
+            sharpen=request.sharpen
+            )
+    except:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
     return {
         "image": request.image,
