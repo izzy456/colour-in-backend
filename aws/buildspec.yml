@@ -7,9 +7,6 @@ env:
     ECR_URL: $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
     TAG: $CODEBUILD_BUILD_NUMBER
 phases:
-  install:
-    runtime-versions:
-      docker: 24
   build:
     commands:
       - echo "Logging in to Amazon ECR"
