@@ -1,0 +1,30 @@
+version: 0.2
+
+env:
+  variables:
+    APP_NAME: colour-in-backend
+    REGION: $AWS_DEFAULT_REGION
+    ECR_URL: $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
+    TAG: $CODEBUILD_BUILD_NUMBER
+phases:
+  install:
+    runtime-versions:
+      docker: 24
+  build:
+    commands:
+      - echo "Logging in to Amazon ECR"
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_URL
+      - echo "Starting build at `date`"
+      - echo "Building Docker image"
+      - docker build -t $APP_NAME:$TAG .
+      - docker tag $APP_NAME:$TAG $ECR_URL/$APP_NAME:$TAG
+      - echo "Build completed at `date`"
+      - echo "Pushing Docker image to ECR"
+      - docker push $ECR_URL/$APP_NAME:$TAG
+      - echo "Update task definition for ECS"
+      - aws iam get-role --role-name ecsTaskExecutionRole | jq ".executionRoleArn=$(jq ".Role.Arn") | .containerDefinitions[0].image = \"$ECR_URL/$APP_NAME:$TAG\" | .logConfiguration.options.\"awslogs-region\" = \"$REGION\"" aws/taskdef.json > taskdef.json
+artifacts:
+  files:
+    - aws/appspec.yml
+    - taskdef.json
+  name: $Env:APP_NAME-$Env:TAG
