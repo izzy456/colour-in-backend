@@ -23,4 +23,4 @@ artifacts:
   files:
     - aws/appspec.yml
     - taskdef.json
-  name: $Env:APP_NAME-$CODEBUILD_BUILD_NUMBER
+  name: $Env:APP_NAME-$CODEBUILD_RESOLVED_SOURCE_VERSION
