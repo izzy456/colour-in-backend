@@ -21,6 +21,7 @@ phases:
       - aws iam get-role --role-name ecsTaskExecutionRole | jq ".executionRoleArn=$(jq ".Role.Arn") | .containerDefinitions[0].image = \"$ECR_URL/$APP_NAME:$TAG\" | .logConfiguration.options.\"awslogs-region\" = \"$REGION\"" aws/taskdef.json > taskdef.json
 artifacts:
   files:
-    - aws/appspec.yml
+    - source: aws/appspec.yml
+      destination: .
     - taskdef.json
   name: $Env:APP_NAME-$CODEBUILD_RESOLVED_SOURCE_VERSION
