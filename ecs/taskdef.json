@@ -20,5 +20,14 @@
     "networkMode": "awsvpc",
     "cpu": "256",
     "memory": "512",
-    "family": "colour-in-backend"
+    "family": "colour-in-backend",
+    "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+            "awslogs-group": "colour-in-backend",
+            "awslogs-region": "",
+            "awslogs-stream-prefix": "ecs",
+            "awslogs-create-group": true
+        }
+    }
 }
