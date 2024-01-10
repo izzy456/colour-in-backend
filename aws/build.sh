@@ -12,8 +12,3 @@ echo "Build completed at `date`"
 
 echo "Pushing Docker image to ECR"
 docker push $ECR_URL/$APP_NAME:$TAG
-
-echo "Update task definition for ECS"
-aws iam get-role --role-name ecsTaskExecutionRole | \
-    jq ".executionRoleArn=`jq ".Role.Arn"` | .containerDefinitions[0].image = \"$ECR_URL/$APP_NAME:$TAG\" | .logConfiguration.options.\"awslogs-region\" = \"$REGION\"" taskdef.json \
-    > taskdef_$TAG.json
