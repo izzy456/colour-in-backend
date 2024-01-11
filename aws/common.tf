@@ -78,17 +78,17 @@ resource "aws_route_table_association" "public_subnet_rt_assoc" {
   route_table_id = aws_route_table.public_route_table.id
 }
 
-# EIP for NATGW
-resource "aws_eip" "eip" {
-  domain = "vpc"
-}
+# # EIP for NATGW
+# resource "aws_eip" "eip" {
+#   domain = "vpc"
+# }
 
-# NATGW
-resource "aws_nat_gateway" "nat_gateway" {
-  depends_on    = [aws_eip.eip, aws_subnet.public_subnet.1]
-  allocation_id = aws_eip.eip.allocation_id
-  subnet_id     = aws_subnet.public_subnet.1.id
-}
+# # NATGW
+# resource "aws_nat_gateway" "nat_gateway" {
+#   depends_on    = [aws_eip.eip, aws_subnet.public_subnet.1]
+#   allocation_id = aws_eip.eip.allocation_id
+#   subnet_id     = aws_subnet.public_subnet.1.id
+# }
 
 # Private RT
 resource "aws_route_table" "private_route_table" {
@@ -96,12 +96,46 @@ resource "aws_route_table" "private_route_table" {
   vpc_id     = aws_vpc.vpc.id
 }
 
-# Private Route (through NATGW)
-resource "aws_route" "private_route" {
-  depends_on             = [aws_route_table.private_route_table, aws_nat_gateway.nat_gateway]
-  route_table_id         = aws_route_table.private_route_table.id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.nat_gateway.id
+# VPC endpoint for ECR API
+resource "aws_vpc_endpoint" "ecr_api_vpc_endpoint" {
+  depends_on          = [aws_subnet.private_subnet, aws_subnet.private_subnet]
+  vpc_id              = aws_vpc.vpc.id
+  service_name        = "com.amazonaws.${var.region}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = aws_subnet.private_subnet.*.id
+  security_group_ids  = [aws_security_group.ecs_sg.id]
+}
+
+# VPC endpoint for ECR docker registry API
+resource "aws_vpc_endpoint" "ecr_dkr_vpc_endpoint" {
+  depends_on          = [aws_security_group.ecs_sg, aws_subnet.private_subnet]
+  vpc_id              = aws_vpc.vpc.id
+  service_name        = "com.amazonaws.${var.region}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = aws_subnet.private_subnet.*.id
+  security_group_ids  = [aws_security_group.ecs_sg.id]
+}
+
+# VPC endpoint for CloudWatch Logs
+resource "aws_vpc_endpoint" "ecr_cloudwatch_vpc_endpoint" {
+  depends_on          = [aws_security_group.ecs_sg, aws_subnet.private_subnet]
+  vpc_id              = aws_vpc.vpc.id
+  service_name        = "com.amazonaws.${var.region}.logs"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = aws_subnet.private_subnet.*.id
+  security_group_ids  = [aws_security_group.ecs_sg.id]
+}
+
+# VPC endpoint for ECR S3
+resource "aws_vpc_endpoint" "ecr_s3_vpc_endpoint" {
+  depends_on        = [aws_route_table.private_route_table]
+  vpc_id            = aws_vpc.vpc.id
+  service_name      = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.private_route_table.id]
 }
 
 # Private Subnets

@@ -1,23 +1,3 @@
-# Logging
-resource "aws_cloudwatch_log_group" "log_group" {
-  name              = var.project_name
-  retention_in_days = 7
-}
-
-# # Artifacts
-# resource "aws_s3_bucket" "artifact_bucket" {
-#   bucket        = var.project_name
-#   force_destroy = true
-# }
-
-# resource "aws_s3_bucket_public_access_block" "artifact_block_public_access" {
-#   bucket                  = aws_s3_bucket.artifact_bucket.id
-#   block_public_acls       = true
-#   block_public_policy     = true
-#   ignore_public_acls      = true
-#   restrict_public_buckets = true
-# }
-
 # SGs
 resource "aws_security_group" "alb_sg" {
   depends_on = [ aws_vpc.vpc ]
