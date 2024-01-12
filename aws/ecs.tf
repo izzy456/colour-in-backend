@@ -1,14 +1,20 @@
+# Logging
+resource "aws_cloudwatch_log_group" "ecs_logs" {
+  name              = var.project_name
+  retention_in_days = 7
+}
+
 # SGs
 resource "aws_security_group" "alb_sg" {
-  depends_on = [ aws_vpc.vpc ]
+  depends_on  = [aws_vpc.vpc]
   name        = "${var.project_name}-alb-sg"
   description = "ALB SG"
   vpc_id      = aws_vpc.vpc.id
 
   ingress {
     description = "Allow all HTTP to ALB"
-    from_port   = 80
-    to_port     = 80
+    from_port   = var.container_port
+    to_port     = var.container_port
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -21,7 +27,7 @@ resource "aws_security_group" "alb_sg" {
 }
 
 resource "aws_security_group" "ecs_sg" {
-  depends_on = [ aws_vpc.vpc ]
+  depends_on  = [aws_security_group.alb_sg]
   name        = "${var.project_name}-ecs-sg"
   description = "ECS SG"
   vpc_id      = aws_vpc.vpc.id
@@ -29,7 +35,7 @@ resource "aws_security_group" "ecs_sg" {
   ingress {
     description     = "Only allow ALB to ECS"
     from_port       = 0
-    to_port         = 8080
+    to_port         = var.container_port
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
   }
@@ -58,51 +64,15 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 
       log_configuration {
         cloud_watch_encryption_enabled = true
-        cloud_watch_log_group_name     = aws_cloudwatch_log_group.log_group.name
+        cloud_watch_log_group_name     = aws_cloudwatch_log_group.ecs_logs.name
       }
     }
   }
 }
 
-# # ASG
-# resource "aws_autoscaling_policy" "autoscaling_policy" {
-#   name = var.project_name
-#   scaling_adjustment = 1
-#   adjustment_type = ""
-#   cooldown = 300
-#   autoscaling_group_name = aws_autoscaling_group.autoscaling_group.name
-# }
-
-# resource "aws_autoscaling_group" "autoscaling_group" {
-#   name = var.project_name
-#   max_size = 5
-#   min_size = 0
-#   health_check_grace_period = 300
-#   health_check_type = "ELB"
-#   desired_capacity = 2
-#   force_delete = false
-#   availability_zones = data.aws_availability_zones.azs.*.id
-# }
-
-# resource "aws_ecs_capacity_provider" "aws_ecs_capacity_provider" {
-#   name = var.project_name
-
-#   auto_scaling_group_provider {
-#     auto_scaling_group_arn = aws_autoscaling_group.autoscaling_group.arn
-#     managed_termination_protection = "ENABLED"
-
-#     managed_scaling {
-#       maximum_scaling_step_size = 1
-#       minimum_scaling_step_size = 1
-#       status = "ENABLED"
-#       target_capacity = 2
-#     }
-#   }
-# }
-
 # Task
 resource "aws_ecs_task_definition" "ecs_task_def" {
-  depends_on = [ aws_iam_role.ecs_execution_role ]
+  depends_on               = [aws_iam_role.ecs_execution_role]
   family                   = var.project_name
   requires_compatibilities = ["FARGATE"]
   cpu                      = 256
@@ -126,7 +96,7 @@ resource "aws_ecs_task_definition" "ecs_task_def" {
         logDriver = "awslogs"
         options = {
           awslogs-create-group  = "true",
-          awslogs-group         = aws_cloudwatch_log_group.log_group.name,
+          awslogs-group         = aws_cloudwatch_log_group.ecs_logs.name,
           awslogs-region        = var.region,
           awslogs-stream-prefix = "${var.project_name}-task"
         }
@@ -149,7 +119,7 @@ resource "aws_ecs_service" "ecs_service" {
   # }
 
   network_configuration {
-    assign_public_ip = true
+    assign_public_ip = false
     subnets          = aws_subnet.private_subnet.*.id
     security_groups  = [aws_security_group.ecs_sg.id]
   }
@@ -171,21 +141,33 @@ resource "aws_lb" "lb" {
   name               = "${var.project_name}-lb"
   load_balancer_type = "application"
   subnets            = aws_subnet.public_subnet.*.id
-  security_groups = [ aws_security_group.alb_sg.id ]
+  security_groups    = [aws_security_group.alb_sg.id]
 }
 
 resource "aws_lb_target_group" "lb_target_group" {
-  depends_on = [ aws_vpc.vpc ]
+  depends_on  = [aws_vpc.vpc]
   name        = var.project_name
   target_type = "ip"
-  port        = 8080
+  port        = var.container_port
   protocol    = "HTTP"
   vpc_id      = aws_vpc.vpc.id
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 3
+    interval            = 30
+    matcher             = 200
+    path                = "/docs"
+    port                = var.container_port
+    protocol            = "HTTP"
+    timeout             = 6
+    unhealthy_threshold = 3
+  }
 }
 
 resource "aws_lb_listener" "lb_listener" {
-  depends_on = [ aws_lb_target_group.lb_target_group ]
-  port              = 80
+  depends_on        = [aws_lb_target_group.lb_target_group]
+  port              = var.container_port
   protocol          = "HTTP"
   load_balancer_arn = aws_lb.lb.arn
 
