@@ -4,7 +4,7 @@ on:
 jobs:
   ecr_build_upload:
     name: Deploy ECR image to ECS - prod
-    runs-on: ubuntu-laprod
+    runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
