@@ -1,0 +1,39 @@
+name: Deploy ECR image to ECS - test
+on:
+  workflow_run:
+    workflows: [Build image and upload to ECR]
+    types: [completed]
+  workflow_dispatch:
+jobs:
+  ecr_build_upload:
+    name: Deploy ECR image to ECS - test
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Create Task Definition
+        run: |
+          aws iam get-role --role-name ecsTaskExecutionRole | \
+          sed -e "s|\"<executionRoleArn>\"|`jq ".Role.Arn"`|g" -e "s|<image>|${{ secrets.ECR_REPO }}/colour-in-backend:$GITHUB_SHA|g" \
+          -e "s|<awslogs-region>|${{ vars.AWS_REGION }}|g" -e "s|<environment>|test|g" taskdef.json \
+          > taskdef_test_$GITHUB_SHA.json
+
+      - name: Update Task Definition and Service
+        run: |
+          aws ecs register-task-definition --cli-input-json file://taskdef_test_$GITHUB_SHA.json --no-cli-pager | \
+          aws ecs update-service --cluster colour-in --service colour-in-backend-test --task-definition colour-in-backend:$(jq ".taskDefinition.revision") --no-cli-pager

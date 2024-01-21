@@ -1,0 +1,56 @@
+name: Build image and upload to ECR
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  ecr_build_upload:
+    name: Build image and upload to ECR
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login
+        run: aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPO }}
+
+      - name: Build Docker image
+        id: build
+        run: docker build -t colour-in-backend:$GITHUB_SHA .
+
+      - name: SonarQube Scan
+        id: scan
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          INPUT_PROJECTBASEDIR: .
+        with:
+          args: >
+            -Dsonar.projectKey=colour-in-backend
+            -Dsonar.sources=.
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=120
+
+      - name: Tag image and upload to ECR
+        id: tag_upload
+        run: |
+          docker tag colour-in-backend:$GITHUB_SHA ${{ secrets.ECR_REPO }}/colour-in-backend:$GITHUB_SHA
+          docker push ${{ secrets.ECR_REPO }}/colour-in-backend:$GITHUB_SHA

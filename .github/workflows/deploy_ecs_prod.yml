@@ -1,0 +1,27 @@
+name: Deploy ECR image to ECS - prod
+on:
+  workflow_dispatch:
+jobs:
+  ecr_build_upload:
+    name: Deploy ECR image to ECS - prod
+    runs-on: ubuntu-laprod
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Update Task Definition and Service
+        run: |
+          aws ecs update-service --cluster colour-in --service colour-in-backend-prod --task-definition colour-in-backend:$(aws ecs describe-task-definition --task-definition colour-in-backend | jq ".taskDefinition.revision") --no-cli-pager

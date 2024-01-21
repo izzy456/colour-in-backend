@@ -1,0 +1,31 @@
+{
+    "family": "colour-in-backend",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "256",
+    "memory": "512",
+    "executionRoleArn": "<executionRoleArn>",
+    "networkMode": "awsvpc",
+    "containerDefinitions": [
+        {
+            "name": "colour-in-backend",
+            "image": "<image>",
+            "cpu": 256,
+            "memory": 512,
+            "essential": true,
+            "portMappings": [
+                {
+                    "containerPort": 8080
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-create-group": "True",
+                    "awslogs-group": "colour-in",
+                    "awslogs-region": "<awslogs-region>",
+                    "awslogs-stream-prefix": "ecs-backend-<environment>"
+                }
+            }
+        }
+    ]
+}
