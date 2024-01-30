@@ -1,11 +1,10 @@
-from typing import List, Optional
 from pydantic import BaseModel
 
 class ColourInRequest(BaseModel):
     image: str
     blur_val: int
-    light_val: float
-    dark_val: float
+    contrast_val: int
+    brighten_val: int
     sharpen: int
 
 class ColourInResponse(ColourInRequest):

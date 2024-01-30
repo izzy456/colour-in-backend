@@ -19,8 +19,8 @@ def get_colour_in(request: schemas.ColourInRequest):
         colouring_page = create_colouring_page(
             img_data=request.image.split(",")[1],
             blur_val=request.blur_val,
-            light_val=request.light_val,
-            dark_val=request.dark_val,
+            contrast_val=request.contrast_val,
+            brighten_val=request.brighten_val,
             sharpen=request.sharpen
             )
     except:
@@ -29,8 +29,8 @@ def get_colour_in(request: schemas.ColourInRequest):
     return {
         "image": request.image,
         "blur_val": request.blur_val,
-        "light_val": request.light_val,
-        "dark_val": request.dark_val,
+        "contrast_val": request.contrast_val,
+        "brighten_val": request.brighten_val,
         "sharpen": request.sharpen,
         "colour_in": dataPrefix+","+colouring_page
         }

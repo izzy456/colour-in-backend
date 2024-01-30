@@ -7,8 +7,8 @@ def test_bad_image():
     test_req = {
         "image": "bad_image",
         "blur_val": 1,
-        "light_val": 1.1,
-        "dark_val": 1.1,
+        "contrast_val": 1,
+        "brighten_val": 1,
         "sharpen": 1
     }
     response = client.post("/get-colour-in", json=test_req)
