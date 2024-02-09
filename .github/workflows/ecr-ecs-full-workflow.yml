@@ -26,7 +26,7 @@ jobs:
       sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
       ecr-repo: ${{ secrets.ECR_REPO }}
   deploy-ecs:
-    if: ${{ !failure() && !cancelled() && github.ref_name == 'main' || github.ref_name == 'develop' || contains(github.ref_name, 'hotfix') }}
+    if: ${{ !failure() && github.ref_name == 'main' || github.ref_name == 'develop' || contains(github.ref_name, 'hotfix') }}
     needs: build-test-upload-ecr
     permissions:
       id-token: write
