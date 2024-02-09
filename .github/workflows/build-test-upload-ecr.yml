@@ -5,7 +5,7 @@ on:
       - develop
       - "feature/**"
     paths-ignore:
-      - ".github/**"
+      - "**.md"
   workflow_dispatch:
 jobs:
   build-test-upload-ecr:
@@ -14,7 +14,7 @@ jobs:
       contents: read
     uses: izzy456/colour-in-workflows/.github/workflows/build-test-upload-ecr.yml@main
     with:
-      branch: ${{ (contains(github.ref_name, 'feature') && 'feature') || github.ref_name }}
+      branch: ${{ github.ref_name }}
       project-name: colour-in-backend
       aws-region: ${{ vars.AWS_REGION }}
     secrets:
