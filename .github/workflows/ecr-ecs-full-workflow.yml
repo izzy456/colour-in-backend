@@ -26,6 +26,7 @@ jobs:
       ecr-repo: ${{ secrets.ECR_REPO }}
   deploy-ecs:
     if: ${{ !contains(github.ref_name, 'feature') }}
+    needs: build-test-upload-ecr
     permissions:
       id-token: write
       contents: read
