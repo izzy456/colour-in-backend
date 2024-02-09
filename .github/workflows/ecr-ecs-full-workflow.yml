@@ -1,7 +1,8 @@
-name: Build image and upload to ECR
+name: Build test and deploy images - ECR & ECS
 on:
   push:
     branches:
+      - main
       - develop
       - "feature/**"
     paths-ignore:
@@ -9,6 +10,7 @@ on:
   workflow_dispatch:
 jobs:
   build-test-upload-ecr:
+    if: ${{ github.ref_name != 'main' }}
     permissions:
       id-token: write
       contents: read
@@ -21,4 +23,19 @@ jobs:
       aws-role: ${{ secrets.AWS_ROLE }}
       sonar-token: ${{ secrets.SONAR_TOKEN }}
       sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
+      ecr-repo: ${{ secrets.ECR_REPO }}
+  deploy-ecs:
+    if: ${{ !contains(github.ref_name, 'feature') }}
+    needs: build-test-upload-ecr
+    permissions:
+      id-token: write
+      contents: read
+    uses: izzy456/colour-in-workflows/.github/workflows/deploy-ecs.yml@main
+    with:
+      branch: ${{ github.ref_name }}
+      project-name: colour-in-backend
+      aws-region: ${{ vars.AWS_REGION }}
+      cluster-name: colour-in
+    secrets:
+      aws-role: ${{ secrets.AWS_ROLE }}
       ecr-repo: ${{ secrets.ECR_REPO }}
