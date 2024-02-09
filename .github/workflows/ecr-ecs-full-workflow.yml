@@ -5,6 +5,7 @@ on:
       - main
       - develop
       - "feature/**"
+      - "hotfix/**"
     paths-ignore:
       - "**.md"
   workflow_dispatch:
