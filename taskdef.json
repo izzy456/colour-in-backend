@@ -1,5 +1,5 @@
 {
-    "family": "colour-in-backend",
+    "family": "colour-in-backend-<environment>",
     "requiresCompatibilities": ["FARGATE"],
     "cpu": "256",
     "memory": "512",
@@ -7,7 +7,7 @@
     "networkMode": "awsvpc",
     "containerDefinitions": [
         {
-            "name": "colour-in-backend",
+            "name": "colour-in-backend-<environment>",
             "image": "<image>",
             "cpu": 256,
             "memory": 512,

@@ -10,7 +10,6 @@ on:
   workflow_dispatch:
 jobs:
   build-test-upload-ecr:
-    if: ${{ github.ref_name != 'main' }}
     permissions:
       id-token: write
       contents: read
